@@ -1,0 +1,117 @@
+#!/bin/bash
+# omarchy:summary=Set up package-owned Apple Silicon services
+# omarchy:hidden=true
+# Optional root permits offline provisioning on the target hardware.
+set -euo pipefail
+root=${1:-/}
+root=${root%/}
+[[ -z $root || $root == /* ]] || exit 2
+# A detector failure stops setup rather than reading as another platform.
+omarchy-hw-platform >/dev/null
+omarchy-hw-apple-silicon || exit 0
+
+# The Intel Mac Broadcom quirk breaks Apple Silicon Wi-Fi, but a runtime without
+# its Apple guard (migration 1786391100) appended it here. Only its exact line
+# goes, with the comment block and blank line that migration wrote right above
+# it; every other line stays, and a file left with only blank lines goes.
+# The initramfs rebuild it owes is recorded first, under the marker the
+# runtime's cleanup migration rebuilds from.
+quirk="options brcmfmac feature_disable=0x82000"
+brcmfmac="$root/etc/modprobe.d/brcmfmac.conf"
+if [[ -L $brcmfmac ]]; then
+  if grep -Fxq -- "$quirk" "$brcmfmac" 2>/dev/null; then
+    echo "Leaving $brcmfmac alone: it is a link. Remove the line \"$quirk\" where it points, then reboot." >&2
+  fi
+elif [[ -f $brcmfmac ]] && grep -Fxq -- "$quirk" "$brcmfmac"; then
+  install -Dm644 /dev/null "$root/var/lib/omarchy/migrations/1789172112-initramfs-pending"
+  kept=$(mktemp "$root/etc/modprobe.d/.brcmfmac.conf.XXXXXX")
+  awk -v quirk="$quirk" \
+    -v c1="# Broadcom's firmware supplicant and authenticator fail the WPA four-way" \
+    -v c2="# handshake on Apple hardware, which surfaces as a rejected password. Disable" \
+    -v c3="# both so wpa_supplicant performs the handshake instead." '
+    { line[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) {
+        if (line[i] != quirk) continue
+        drop[i] = 1
+        if (i > 3 && line[i - 3] == c1 && line[i - 2] == c2 && line[i - 1] == c3) {
+          drop[i - 1] = drop[i - 2] = drop[i - 3] = 1
+          if (i > 4 && line[i - 4] == "") drop[i - 4] = 1
+        }
+      }
+      for (i = 1; i <= NR; i++) if (!drop[i]) print line[i]
+    }' "$brcmfmac" >"$kept" || { rm -f -- "$kept"; exit 1; }
+  if grep -q '[^[:space:]]' "$kept"; then
+    chown --reference="$brcmfmac" "$kept"
+    chmod --reference="$brcmfmac" "$kept"
+    mv -- "$kept" "$brcmfmac"
+  else
+    rm -f -- "$kept" "$brcmfmac"
+  fi
+  echo "Removed the Intel Mac Broadcom quirk from $brcmfmac; it stops applying at the next reboot"
+fi
+
+# The earlier mpv default lacks gpu-sw, so mpv aborts where the GPU has no
+# driver, and tmpfiles never replaces the copy it made. Only a regular file
+# byte-identical to that copy takes the new default; edits and links stay.
+mpv="$root/etc/mpv/mpv.conf"
+released_mpv_sum=9e186dd88be483b3666795b805e780921adecd1051ae85986857c22152a2d818
+if [[ -f $mpv && ! -L $mpv ]] && [[ $(sha256sum <"$mpv") == "$released_mpv_sum  -" ]]; then
+  updated=$(mktemp "$root/etc/mpv/.mpv.conf.XXXXXX")
+  cp -- "$root/usr/share/omarchy-mac/mpv/mpv.conf" "$updated" || { rm -f -- "$updated"; exit 1; }
+  chown --reference="$mpv" "$updated"
+  chmod --reference="$mpv" "$updated"
+  mv -- "$updated" "$mpv"
+  echo "Updated $mpv to the current omarchy-mac default, which lets mpv draw in software where the GPU has no driver"
+fi
+
+unit=omarchy-wifi-resume-fix.service
+marker="$root/var/lib/omarchy-mac/wifi-configured"
+if "$root/usr/lib/omarchy-mac/wifi-supported" && [[ ! -f $marker ]]; then
+  if [[ -e $root/etc/systemd/system/$unit || -L $root/etc/systemd/system/$unit || -e $root/run/systemd/system/$unit || -L $root/run/systemd/system/$unit ]]; then
+    echo "Preserving Wi-Fi unit override: $root/etc/systemd/system/$unit"
+  else
+    systemctl --root="${root:-/}" enable "$unit"
+    install -Dm644 /dev/null "$marker"
+  fi
+fi
+
+# The kernel keeps the speakers muted until speakersafetyd runs. This package is
+# its only enabler: apply the vendor preset once, so earlier-sorting or
+# same-name /etc presets, masks and later explicit disables stay the
+# administrator's choice.
+safety=speakersafetyd.service
+safety_marker="$root/var/lib/omarchy-mac/speaker-safety-configured"
+if [[ ! -f $safety_marker ]]; then
+  if [[ ! -f $root/usr/lib/systemd/system/$safety ]]; then
+    echo "Deferring speaker safety: speakersafetyd is not installed"
+  elif [[ $(systemctl --root="${root:-/}" is-enabled "$safety" 2>/dev/null) == masked* ]]; then
+    echo "Preserving masked speaker safety unit: $safety"
+  else
+    systemctl --root="${root:-/}" preset "$safety"
+    install -Dm644 /dev/null "$safety_marker"
+  fi
+fi
+
+if [[ -z $root && -d /run/systemd/system ]]; then
+  systemctl daemon-reload
+  # cat exits nonzero for an intentional mask; report it without failing setup.
+  systemctl cat "$unit" || true
+  NetworkManager --print-config
+  modprobe --showconfig | grep -E '^options appledrm ' || true
+  # A start-limit-hit after bad IV-sense data leaves the speakers locked at -100 dB.
+  if systemctl is-enabled --quiet "$safety" && ! systemctl is-active --quiet "$safety"; then
+    systemctl reset-failed "$safety" || true
+    systemctl start "$safety" || echo "Warning: speakersafetyd did not start; the speakers stay muted." >&2
+  fi
+fi
+
+# The Electron launchers and Steam's FEX launcher are the live machine's, so a
+# staging root skips them. Last, so a failure here leaves the services done.
+if [[ -z $root ]]; then
+  # iwd needs the saved networks before the backend switch applies at
+  # NetworkManager's next start, and only the running daemon can list them.
+  "$root/usr/lib/omarchy-mac/wifi-iwd-profiles"
+  "$root/usr/lib/omarchy-mac/electron-launchers"
+  "$root/usr/lib/omarchy-mac/steam-launcher"
+fi

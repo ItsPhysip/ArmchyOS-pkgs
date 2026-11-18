@@ -1,0 +1,23 @@
+# Apple Silicon hardware services from omarchy-mac-pkgs (rev ea0097a523191bcf3c6997e8d3a162ea13a1fe67).
+# Files are under files/
+pkgname=armchy-hw
+pkgver=0.1.0
+pkgrel=2
+pkgdesc='ArmchyOS: Apple Silicon hardware services (audio, Touch ID, Wi-Fi resume, battery limit, keyboard), from omarchy-mac-pkgs'
+arch=('aarch64')
+url='https://github.com/omacom/omarchy-mac-pkgs'
+license=('MIT')
+depends=('armchy-boot' 'bash' 'coreutils' 'diffutils' 'grep' 'sed' 'gawk' 'systemd' 'pciutils' 'kmod' 'mkinitcpio' 'networkmanager' 'iwd' 'python' 'pipewire' 'pipewire-pulse' 'libpulse' 'wireplumber' 'asahi-audio' 'speakersafetyd' 'alsa-ucm-conf-asahi' 'rtkit' 'pipewire-alsa' 'vulkan-asahi' 'asahi-alarm-keyring' )
+provides=('omarchy-platform' 'omarchy-mac=0.2.3')
+conflicts=('omarchy-platform' 'omarchy-mac')
+options=('!strip' '!debug')
+source=('LICENSE')
+sha256sums=('SKIP')
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  # git keeps only the exec bit: normalise modes first
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -perm /111 -exec chmod 755 {} +
+  find "$pkgdir" -type f ! -perm /111 -exec chmod 644 {} +
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

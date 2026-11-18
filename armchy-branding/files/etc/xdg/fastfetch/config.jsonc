@@ -1,0 +1,19 @@
+// ArmchyOS fastfetch defaults (armchy-branding). Your own ~/.config/fastfetch/config.jsonc
+// wins over this file.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file-raw",
+    "source": "/usr/share/armchy/fastfetch/logo.txt",
+    "width": 42, "height": 18,
+    "padding": { "top": 1, "left": 2, "right": 3 }
+  },
+  "display": {
+    "color": { "keys": "38;2;0;168;136", "title": "38;2;63;239;154" }
+  },
+  // fastfetch's own default list (a config without "modules" shows none)
+  "modules": [ "title", "separator", "os", "host", "kernel", "uptime", "packages", "shell",
+    "display", "de", "wm", "wmtheme", "theme", "icons", "font", "cursor", "terminal",
+    "terminalfont", "cpu", "gpu", "memory", "swap", "disk", "localip", "battery",
+    "poweradapter", "locale", "break", "colors" ]
+}

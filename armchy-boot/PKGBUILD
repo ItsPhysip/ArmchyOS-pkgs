@@ -1,0 +1,28 @@
+# Plain-file build of the ArmchyOS boot layer: omarchy-mac-boot 20261104 (rev 7e50e937b5f32a62f1c8fee9699467d23faa74d5),
+# four omarchy runtime commands, and the boot files from omarchy-settings 4.5.0. All under files/.
+# The ArmchyOS Limine colours (old limine-armchy.sed) and the limine-boot.sh grep change are applied once to the stored files.
+pkgname=armchy-boot
+pkgver=0.1.0
+pkgrel=5
+pkgdesc='ArmchyOS: the M5 boot layer (Limine, m1n1, initramfs hooks, LUKS unlock), from omarchy-mac-boot'
+arch=('any')
+url='https://github.com/omacom/omarchy-mac-pkgs'
+license=('MIT')
+depends=('limine' 'limine-mkinitcpio-hook>=1.39.0-2' 'limine-snapper-sync' 'asahi-scripts' 'm1n1' 'uboot-asahi'
+         'asahi-alarm-keyring' 'bash' 'binutils' 'btrfs-progs' 'coreutils' 'cpio' 'cryptsetup' 'diffutils' 'gawk'
+         'gnupg' 'grep' 'gum' 'gzip' 'kbd' 'mkinitcpio' 'sed' 'systemd' 'util-linux' 'plymouth')
+provides=('omarchy=4.5.0' 'omarchy-mac-boot=20261104' 'omarchy-apple-boot' 'omarchy-first-boot' 'armchy-base=0.1.0')
+conflicts=('omarchy' 'omarchy-mac-boot' 'omarchy-apple-boot' 'omarchy-first-boot' 'armchy-base' 'omarchy-settings')
+backup=('etc/boot/hooks/pre.d/05-omarchy-mac-limine-gate' 'etc/default/update-m1n1' 'etc/initcpio/install/omarchy-vendorfw' 'etc/limine-entry-tool.d/omarchy-defaults.conf' 'etc/limine-entry-tool.d/omarchy-uki.conf' 'etc/mkinitcpio.conf.d/00-omarchy-hooks.conf' 'etc/mkinitcpio.conf.d/90-omarchy-mac.conf' 'etc/mkinitcpio.conf.d/91-omarchy-mac-encrypt.conf' 'etc/mkinitcpio.conf.d/92-omarchy-mac-hid.conf' 'etc/mkinitcpio.conf.d/92-omarchy-mac-kbd-backlight.conf' 'etc/mkinitcpio.conf.d/92-omarchy-mac-pmp.conf' 'etc/mkinitcpio.conf.d/93-omarchy-mac-plymouth.conf' 'etc/mkinitcpio.conf.d/94-omarchy-mac-vconsole.conf' 'etc/mkinitcpio.conf.d/i2c_hid_of_module.conf' 'etc/mkinitcpio.conf.d/omarchy_hooks.conf' 'etc/mkinitcpio.conf.d/omarchy_vconsole.conf' 'etc/mkinitcpio.conf.d/thunderbolt_module.conf' 'etc/snapper/config-templates/omarchy' 'etc/systemd/system/kmod-static-nodes.service.d/10-before-tmpfiles-setup-dev.conf' 'etc/systemd/system/omarchy-vendor-firmware.service' 'usr/lib/omarchy/initcpio/omarchy-mac-encrypt' 'usr/lib/omarchy/initcpio/omarchy-mac-encrypt-keydev-umount.conf' 'usr/lib/omarchy/initcpio/omarchy-mac-encrypt-keydev.conf' 'usr/lib/omarchy/initcpio/omarchy-mac-encrypt.service' 'usr/lib/omarchy/initcpio/omarchy-mac-plymouth.script' 'usr/lib/omarchy/initcpio/omarchy-mac-snapshot-overlay' 'usr/lib/omarchy/initcpio/omarchy-mac-snapshot-overlay.service' 'usr/lib/omarchy/initcpio/omarchy-vendorfw-cryptsetup.conf' 'usr/lib/omarchy/initcpio/omarchy-vendorfw-initrd.service' 'usr/lib/omarchy/initcpio/omarchy-vendorfw-initrd.sh' 'usr/lib/omarchy/initcpio/omarchy-vendorfw.service' 'usr/lib/omarchy/initcpio/omarchy-vendorfw.sh' )
+install=armchy-boot.install
+options=('!strip' '!debug')
+source=('LICENSE')
+sha256sums=('SKIP')
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  # git keeps only the exec bit: normalise modes first
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -perm /111 -exec chmod 755 {} +
+  find "$pkgdir" -type f ! -perm /111 -exec chmod 644 {} +
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

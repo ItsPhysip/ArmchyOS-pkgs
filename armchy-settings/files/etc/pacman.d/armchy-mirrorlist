@@ -1,0 +1,8 @@
+# ArmchyOS mirrors for Arch Linux ARM (armchy-settings). Used by [core], [extra] and [alarm].
+# Omarchy's HTTPS copy first: the same files as Arch Linux ARM's (checked 2026-11-19) and the
+# fastest from here. Then official mirrors that serve HTTPS, tried in order if it fails.
+# HTTPS matters because Arch Linux ARM's repo databases are unsigned (packages are signed).
+Server = https://arm-mirror.omarchy.org/$arch/$repo
+Server = https://ca.us.mirror.archlinuxarm.org/$arch/$repo
+Server = https://fl.us.mirror.archlinuxarm.org/$arch/$repo
+Server = https://de3.mirror.archlinuxarm.org/$arch/$repo

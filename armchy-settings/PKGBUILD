@@ -1,0 +1,25 @@
+# System tuning from omarchy-settings 4.5.0 (zram, sysctls, systemd, NetworkManager, udev, oomd), kept under files/.
+# The omarchy- to armchy- renames and drops of the old map are already applied to the stored files; the sudoers,
+# ssh and mirrorlist files are ArmchyOS additions.
+pkgname=armchy-settings
+pkgver=0.1.0
+pkgrel=4
+pkgdesc='ArmchyOS: system tuning (zram, sysctls, systemd, NetworkManager), from omarchy-settings'
+arch=('any')
+url='https://github.com/omacom/omarchy'
+license=('MIT')
+depends=('zram-generator' 'systemd')
+conflicts=('omarchy-settings')
+backup=('etc/pacman.d/armchy-mirrorlist' 'etc/gnupg/dirmngr.conf' 'etc/modprobe.d/omarchy-usb-autosuspend.conf' 'etc/ssh/ssh_config.d/20-armchy-keepalive.conf' 'etc/sudoers.d/00-armchy-wheel' 'etc/sysctl.d/90-armchy-arp.conf' 'etc/sysctl.d/90-armchy-file-watchers.conf' 'etc/sysctl.d/99-armchy-sysctl.conf' 'etc/systemd/logind.conf.d/10-ignore-power-button.conf' 'etc/systemd/logind.conf.d/20-inhibit-delay.conf' 'etc/systemd/oomd.conf.d/10-armchy.conf' 'etc/systemd/resolved.conf.d/10-disable-multicast.conf' 'etc/systemd/system.conf.d/10-faster-shutdown.conf' 'etc/systemd/system.conf.d/20-armchy-nofile.conf' 'etc/systemd/system/plocate-updatedb.service.d/ac-only.conf' 'etc/systemd/system/user@.service.d/10-faster-shutdown.conf' 'etc/systemd/user.conf.d/20-armchy-nofile.conf' 'etc/udev/rules.d/60-armchy-io-scheduler.rules' )
+options=('!strip' '!debug')
+source=('LICENSE' 'modes')
+sha256sums=('SKIP' 'SKIP')
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  # git keeps only the exec bit: normalise modes, then apply the exceptions from modes
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -perm /111 -exec chmod 755 {} +
+  find "$pkgdir" -type f ! -perm /111 -exec chmod 644 {} +
+  while read -r mode path; do chmod "$mode" "$pkgdir/$path"; done < "$srcdir/modes"
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

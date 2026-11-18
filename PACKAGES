@@ -1,0 +1,10 @@
+# one package folder per line
+armchy-boot
+armchy-branding
+armchy-settings
+armchy-hw
+armchy-power-profiles-daemon
+armchy-fish-config
+fish-autopair
+fish-pure-prompt
+armchy-plymouth

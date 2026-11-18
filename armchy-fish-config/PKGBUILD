@@ -1,0 +1,21 @@
+# ArmchyOS fish config: CachyOS cachyos-fish-config v16 (Vladislav Nepogodin, ptr1337; MIT) with the edits marked
+# in armchy-config.fish; done.fish is franciscolourenco/done. Files are under files/.
+# tealdeer -> tldr (already installed; they conflict). No GRUB/CachyOS-mirror aliases.
+pkgname=armchy-fish-config
+pkgver=16
+pkgrel=2
+pkgdesc="ArmchyOS: fish configuration (from CachyOS's)"
+arch=('any')
+url='https://github.com/CachyOS/CachyOS-PKGBUILDS'
+license=('MIT')
+depends=(bat expac eza fastfetch fish fish-autopair fish-pure-prompt fisher fzf pkgfile tldr ttf-fantasque-nerd)
+options=('!strip' '!debug')
+source=('LICENSE')
+sha256sums=('SKIP')
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  # git keeps only the exec bit: normalise modes first
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -exec chmod 644 {} +
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

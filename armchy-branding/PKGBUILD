@@ -1,0 +1,22 @@
+# ArmchyOS branding: chair icon, fastfetch defaults, Plasma and Konsole colour schemes. Files are under files/.
+pkgname=armchy-branding
+pkgver=0.3.0
+pkgrel=2
+pkgdesc='ArmchyOS: system icon (os-release LOGO=armchyos), fastfetch default logo, Plasma and Konsole colour schemes'
+arch=('any')
+url='https://github.com/ItsPhysip/ArmchyOS-pkgs'
+license=('MIT')
+depends=('hicolor-icon-theme')
+optdepends=('fastfetch: shows the ArmchyOS chair logo')
+backup=('etc/xdg/fastfetch/config.jsonc' 'etc/xdg/konsolerc')
+options=('!strip' '!debug')
+source=('LICENSE')
+sha256sums=('SKIP')
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  # git keeps only the exec bit: normalise modes first
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -perm /111 -exec chmod 755 {} +
+  find "$pkgdir" -type f ! -perm /111 -exec chmod 644 {} +
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

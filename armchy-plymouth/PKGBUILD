@@ -1,0 +1,21 @@
+# ArmchyOS boot splash: Omarchy's Plymouth script theme plus the ArmchyOS chair that fills in block by block.
+# Installing changes nothing until the theme is selected and the boot image is rebuilt. Files are under files/.
+pkgname=armchy-plymouth
+pkgver=0.2.0
+pkgrel=5
+pkgdesc='ArmchyOS: boot splash theme (the chair fills in as the system boots)'
+arch=('any')
+url='https://github.com/omacom/omarchy'
+license=('MIT')
+depends=('plymouth')
+options=('!strip' '!debug')
+source=('LICENSE')
+sha256sums=('SKIP')
+package() {
+  cp -a "$startdir/files/." "$pkgdir/"
+  # git keeps only the exec bit: normalise modes first
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -perm /111 -exec chmod 755 {} +
+  find "$pkgdir" -type f ! -perm /111 -exec chmod 644 {} +
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

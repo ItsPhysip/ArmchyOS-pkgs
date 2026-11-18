@@ -1,0 +1,20 @@
+# Contributor: Luis Martinez <luis dot martinez at disroot dot org>
+# (AUR PKGBUILD; ArmchyOS: release tarball instead of the signed git tag, sha256 pinned)
+pkgname=fish-autopair
+pkgver=1.0.4
+pkgrel=3
+pkgdesc="Auto-complete matching pairs in the Fish command line"
+url="https://github.com/jorgebucaran/autopair.fish"
+license=('MIT')
+arch=('any')
+depends=('fish')
+conflicts=('fish-pisces')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz")
+sha256sums=('ba2686d0d3b738f6f08654f4f4c3dc50e556c9a0605bcde08bf93431d737ac85')
+package() {
+  cd "autopair.fish-$pkgver"
+  install -Dm644 conf.d/autopair.fish -t "$pkgdir/usr/share/fish/vendor_conf.d/"
+  find functions -type f -exec install -Dm644 -t "$pkgdir/usr/share/fish/vendor_functions.d/" '{}' \+
+  install -Dm644 LICENSE.md "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md -t "$pkgdir/usr/share/doc/$pkgname/"
+}

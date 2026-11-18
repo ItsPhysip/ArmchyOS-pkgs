@@ -1,0 +1,3 @@
+# ArmchyOS default Konsole profile (armchy-branding). Your ~/.config/konsolerc wins.
+[Desktop Entry]
+DefaultProfile=ArmchyOS.profile
